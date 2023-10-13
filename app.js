@@ -1,10 +1,11 @@
 const express = require("express");
-const conn = require("./db.js");
+const pool = require("./db.js");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const mysql = require('mysql');
+var mysql = require('mysql');
+const bcrypt = require('bcrypt');
 
 const app= express();
 
@@ -30,7 +31,7 @@ app.get("api/users",(req,res) =>{
 
 //GET users by id
 app.post("/api/user/:id" , (req,res)=>{
-    conn.query(`SELECT * FROM users where userId=${req.params.id}`,function(err,result){
+    conn.query(`SELECT * FROM users where user_id=${req.params.id}`,function(err,result){
         if (!err ) response.send ({ data : result} );else{return err;}
     })}
 );
@@ -47,9 +48,9 @@ app.post("api/addUser",(req,res)=> {
 
 //UPDATE a User
 app.put("/api/user/:id", (req, res) => {
-    const userId = req.params.id;
+    const user_id = req.params.id;
     const userData = req.body;
-    updateEmployee(null, { userId, userData })
+    updateUser(null, { user_id, userData })
       .then((user) => {
         res.json({
           updatedUser: user,
@@ -65,15 +66,16 @@ app.put("/api/user/:id", (req, res) => {
 
 //DELETE User
 app.delete('/api/user/:userId', (req,res)=>{
-    conn.query('DELETE FROM users Where UserId=?',[req.params.userId],
+    conn.query('DELETE FROM users Where user_id=?',[req.params.userId],
     function(err,results){
         if(err) throw err;
-        console.log(`${req.params.userId} DELETEd`);    
+        console.log(`${req.params.user_id} DELETED`);    
         });
 });
 
 //GET All HOUSES
 app.get ("/api/houses/", (req,res)=>{
+    
     conn.query ('SELECT * FROM houses;',
     function(err, results ){
         if(!err && results != undefined || !results == []) return  res.send({"data":results,"message":"success"});
@@ -84,11 +86,38 @@ app.get ("/api/houses/", (req,res)=>{
 
 //Login
 app.post('/api/login', (req,res) =>{
-
+    const email = req.body.email;
+    const password = req.body.password;
+    console.log(req.body);
+        pool.query(`SELECT * FROM users where user_email= ?`,[email],(err,result,fields)=>{
+            if (!err ) 
+            {
+                console.log(result, password,result[0].user_password);
+                try{
+                    if(password == result[0].user_password){
+                        console.log("Password Matched");
+                        return res.status(200).json({message:"Successfully Logged In"});
+                        
+                    }
+                    else{
+                        //Password Not Matched
+                        console.log("Password UNMatched");
+                        return res.status(403).json({message:'Invalid Credentials'});
+                        
+                    }
+                }
+                catch(err){
+                    res.redirect("/signup");
+                    };  
+            }        
+                                
+        });
 })
 
 //Register
-app.post('/api/register', (req,res)=>{})
+app.post('/api/register', (req,res)=>{
+    const hashedPassword = bcryptjs.hashSync(req.body.password, 8);
+})
 
 
 

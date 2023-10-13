@@ -1,16 +1,20 @@
-const mysql = require('mysql');
+var mysql = require('mysql');
 
-const conn = mysql.createConnection({
+const {createPool} = require('mysql');
+
+
+const pool = createPool({
     host:"localhost",
     user:"root",
     password:"root",
-    database:"unity_umbrella"
+    database:"unity_umbrella",
+    connectionLimit:100000
 
 });
 
-conn.connect((error) =>{
-    if (error) throw error;
-    console.log("Connected to the Mysql Server");
-});
+// conn.connect((error) =>{
+//     if (error) throw error;
+//     console.log("Connected to the Mysql Server");
+// });
 
-module.exports= {conn}
+module.exports= pool;
