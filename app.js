@@ -23,31 +23,45 @@ app.listen(3001,()=>{
 });
 
 //GET all Users
-app.get("api/users",(req,res) =>{
-    conn.query(`SELECT * FROM users`,function(err ,rows){
-        if(!err) res.send({data: rows}) ; else return err;
+app.get ("/api/users/", (req,res)=>{
+    pool.query(`SELECT * FROM users `,(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'No Data'});
+        }
         })
 })
 
 //GET users by id
-app.post("/api/user/:id" , (req,res)=>{
-    conn.query(`SELECT * FROM users where user_id=${req.params.id}`,function(err,result){
-        if (!err ) response.send ({ data : result} );else{return err;}
-    })}
-);
+app.post("/api/user?:id" , (req,res)=>{
+    pool.query(`SELECT * FROM users where user_id= ? `,[req.body.id],(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'User Not Found'});
+        }
+    })
+});
 
-//CREATE a User
-app.post("api/addUser",(req,res)=> {
-    const newUser = req.body;
-    createUser(null, newUser).then((savedUSer) => {
-        res.json(savedUSer);
-      }).catch((error) => {
-        res.status(500).json({ success: false, message: 'Failed to insert user' });
-      });
-})
+// //CREATE a User
+// app.post("api/addUser",(req,res)=> {
+//     const newUser = req.body;
+//     createUser(null, newUser).then((savedUSer) => {
+//         res.json(savedUSer);
+//       }).catch((error) => {
+//         res.status(500).json({ success: false, message: 'Failed to insert user' });
+//       });
+// })
 
 //UPDATE a User
-app.put("/api/user/:id", (req, res) => {
+app.put("/api/user?:id", (req, res) => {
     const user_id = req.params.id;
     const userData = req.body;
     updateUser(null, { user_id, userData })
@@ -65,29 +79,38 @@ app.put("/api/user/:id", (req, res) => {
   });
 
 //DELETE User
-app.delete('/api/user/:userId', (req,res)=>{
-    conn.query('DELETE FROM users Where user_id=?',[req.params.userId],
+app.delete('/api/user?:userId', (req,res)=>{
+    pool.query('DELETE FROM users Where user_id=?',[req.body.id],
     function(err,results){
         if(err) throw err;
-        console.log(`${req.params.user_id} DELETED`);    
+        console.log(`${req.body.id} DELETED`);    
+        return res.status(200).json({message:"User Deleted"});
         });
 });
 
 //GET All HOUSES
 app.get ("/api/houses/", (req,res)=>{
-    
-    conn.query ('SELECT * FROM houses;',
-    function(err, results ){
-        if(!err && results != undefined || !results == []) return  res.send({"data":results,"message":"success"});
-        else if(!err) return res.send({"data":results}).status(201);
-        else console.log (`Error ${err}`);
-        })
+
+    pool.query(`SELECT * FROM houses` ,(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+            
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'No Data'});
+
+        }
     })
+   
+})
 
 //Login
 app.post('/api/login', (req,res) =>{
     const email = req.body.email;
     const password = req.body.password;
+
     console.log(req.body);
         pool.query(`SELECT * FROM users where user_email= ?`,[email],(err,result,fields)=>{
             if (!err ) 
@@ -116,7 +139,53 @@ app.post('/api/login', (req,res) =>{
 
 //Register
 app.post('/api/register', (req,res)=>{
-    const hashedPassword = bcryptjs.hashSync(req.body.password, 8);
+    const hashedPassword = bcrypt.hash(req.body.password,"salt", (err, hash) => { });
+    const fname=req.body.firstName;
+    const lname=req.body.lastName;
+    const phone= req.body.phoneNumber;
+    const dob= req.body.dob;
+    const email=req.body.email;
+    const clg = req.body.college;
+    const location=req.body.location;
+    const campus=req.body.campus;
+
+    console.log(req.body,hashedPassword);
+    // //insert into pool query
+    // pool.query(`INSERT INTO users (user_firstName,user_lastName,user_phoneNumber,user_dob,user_email,user_password,colleges_college_id,location_location_id,campuses_campus_id) VALUES(`,[{ 
+    //     fname,
+    //     lname,
+    //     phone,
+    //     dob,
+    //     email,
+    //     hashedPassword,
+    //     clg,
+    //     location,
+    //     campus
+    //     }], (error, results, fields) =>{
+
+    //         if (error) throw error;
+    //         console.log('User CReated Successfully');
+
+    //     });
+
+    pool.query(`INSERT INTO users SET ?`,[{ 
+            user_firstName:fname,
+            user_lastName:lname,
+            user_phoneNumber:phone,
+            user_dob:dob,
+            user_email:email,
+            user_password:req.body.password,
+            colleges_college_id:clg,
+            location_location_id:location,
+            campuses_campus_id:campus
+            }], (error, results, fields) =>{
+    
+                if (error) throw error;
+                return res.status(301).json({message:"Created User"});
+    
+            });
+    
+
 })
 
 
