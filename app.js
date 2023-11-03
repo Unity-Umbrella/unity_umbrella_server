@@ -14,7 +14,8 @@ app.use(helmet());
 
 app.use(bodyParser.json());
 
-app.use(cors());
+const corsOptions = { 'Access-Control-Allow-Origin': '*'};
+app.use(cors(corsOptions));
 
 app.use(morgan('combined'));
 
@@ -50,15 +51,29 @@ app.post("/api/user?:id" , (req,res)=>{
     })
 });
 
-// //CREATE a User
-// app.post("api/addUser",(req,res)=> {
-//     const newUser = req.body;
-//     createUser(null, newUser).then((savedUSer) => {
-//         res.json(savedUSer);
-//       }).catch((error) => {
-//         res.status(500).json({ success: false, message: 'Failed to insert user' });
-//       });
-// })
+//CREATE a User
+app.post("/api/addUser/",(req,res)=> {
+    const newUser = req.body;
+    //Validation for the user input
+    // add new user query
+    console.log(newUser);
+    pool.query('INSERT INTO users SET ?',{
+        user_firstName :newUser.firstName,
+        user_lastName : newUser.lastName,
+        user_email : newUser.email,
+        user_password : newUser.password,
+        user_phoneNumber : newUser.phoneNumber,
+        user_dob : newUser.dob,
+        colleges_college_id:1,
+        location_location_id:1,
+        campuses_campus_id:1
+
+    }, (err, result) => {
+        if (err) throw err;
+        res.send("New User Added Successfully!");
+    });
+        
+})
 
 //UPDATE a User
 app.put("/api/user?:id", (req, res) => {
@@ -106,6 +121,27 @@ app.get ("/api/houses/", (req,res)=>{
    
 })
 
+// //CREATE House
+// app.post("/api/addhouse/",(req,res)=> {
+
+//     const owner = req.body.city;
+//     const house_number = req.body.country;
+//     const street = req.body.country;
+//     const postal_code = req.body.country;
+//     const  = req.body.country;
+
+//     // console.log(location);
+//     pool.query('INSERT INTO location SET ?',{
+//         location_city :location_city,
+//         location_country : location_country,
+
+//     }, (err, result) => {
+//         if (err) throw err;
+//         res.send("Location Added Successfully!");
+//     });
+        
+// })
+
 //Login
 app.post('/api/login', (req,res) =>{
     const email = req.body.email;
@@ -137,56 +173,298 @@ app.post('/api/login', (req,res) =>{
         });
 })
 
-//Register
-app.post('/api/register', (req,res)=>{
-    const hashedPassword = bcrypt.hash(req.body.password,"salt", (err, hash) => { });
-    const fname=req.body.firstName;
-    const lname=req.body.lastName;
-    const phone= req.body.phoneNumber;
-    const dob= req.body.dob;
-    const email=req.body.email;
-    const clg = req.body.college;
-    const location=req.body.location;
-    const campus=req.body.campus;
 
-    console.log(req.body,hashedPassword);
-    // //insert into pool query
-    // pool.query(`INSERT INTO users (user_firstName,user_lastName,user_phoneNumber,user_dob,user_email,user_password,colleges_college_id,location_location_id,campuses_campus_id) VALUES(`,[{ 
-    //     fname,
-    //     lname,
-    //     phone,
-    //     dob,
-    //     email,
-    //     hashedPassword,
-    //     clg,
-    //     location,
-    //     campus
-    //     }], (error, results, fields) =>{
+//GET Locations
+app.get('/api/location',(req,res)=>{
 
-    //         if (error) throw error;
-    //         console.log('User CReated Successfully');
+    pool.query(`SELECT * FROM locations` ,(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+            
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'No Data'});
 
-    //     });
-
-    pool.query(`INSERT INTO users SET ?`,[{ 
-            user_firstName:fname,
-            user_lastName:lname,
-            user_phoneNumber:phone,
-            user_dob:dob,
-            user_email:email,
-            user_password:req.body.password,
-            colleges_college_id:clg,
-            location_location_id:location,
-            campuses_campus_id:campus
-            }], (error, results, fields) =>{
-    
-                if (error) throw error;
-                return res.status(301).json({message:"Created User"});
-    
-            });
-    
+        }
+    })
 
 })
 
+//POST Location
+app.post("/api/addLocation/",(req,res)=> {
+
+    const location_city = req.body.city;
+    const location_country = req.body.country;
+
+    pool.query('INSERT INTO location SET ?',{
+        location_city :location_city,
+        location_country : location_country,
+
+    }, (err, result) => {
+        if (err) throw err;
+        res.send("Location Added Successfully!");
+    });
+        
+})
 
 
+//DELETE Locations
+app.delete('/api/location?:locationId', (req,res)=>{
+    pool.query('DELETE FROM location Where location_id=?',[req.body.id],
+    function(err,results){
+        if(err) throw err;
+        console.log(`${req.body.id} DELETED`);    
+        return res.status(200).json({message:"Location Deleted"});
+        });
+});
+
+//GET colleges
+app.get('/api/colleges',(req,res)=>{
+
+    pool.query(`SELECT * FROM admin` ,(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+            
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'No Data'});
+
+        }
+    })
+
+})
+
+//POST Colleges
+app.post("/api/addCollege/",(req,res)=> {
+
+    const name = req.body.collegeName;
+
+    // console.log(location);
+    pool.query('INSERT INTO colleges SET ?',{
+        college_name :name,
+
+    }, (err, result) => {
+        if (err) throw err;
+        res.send("College Added Successfully!");
+    });
+        
+})
+//DELETE Colleges
+app.delete('/api/colleges?:collegeId', (req,res)=>{
+    pool.query('DELETE FROM colleges Where college_id=?',[req.body.id],
+    function(err,results){
+        if(err) throw err;
+        console.log(`${req.body.id} DELETED`);    
+        return res.status(200).json({message:"College Deleted"});
+        });
+});
+
+//GET campuses
+app.get('/api/campuses',(req,res)=>{
+
+    pool.query(`SELECT * FROM campuses` ,(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+            
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'No Data'});
+
+        }
+    })
+
+})
+
+//POST Campuses
+app.post("/api/addCampuses/",(req,res)=> {
+
+    const campusName = req.body.name;
+    const collegeId = req.body.collegeId;
+    const locationId = req.body.locationId;
+
+    // console.log(location);
+    pool.query('INSERT INTO campuses SET ?',{
+        campus_name :campusName,
+        colleges_college_id : collegeId,
+        location_location_id : locationId,
+
+    }, (err, result) => {
+        if (err) throw err;
+        res.send("Campus Added Successfully!");
+    });
+        
+})
+
+//DELETE Campuses
+app.delete('/api/campuses?:campusId', (req,res)=>{
+    pool.query('DELETE FROM campuses Where campus_id=?',[req.body.id],
+    function(err,results){
+        if(err) throw err;
+        console.log(`${req.body.id} DELETED`);    
+        return res.status(200).json({message:"Campus Deleted"});
+        });
+});
+
+//GET admin
+app.get('/api/admin',(req,res)=>{
+
+    pool.query(`SELECT * FROM admin` ,(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+            
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'No Data'});
+
+        }
+    })
+
+})
+
+//POST Admin
+app.post("/api/addAdmin/",(req,res)=> {
+
+    const user = req.body.user;
+    const password = req.body.password;
+    const role = req.body.role;
+
+    // console.log(location);
+    pool.query('INSERT INTO admin SET ?',{
+        admin_user :user,
+        admin_password : password,
+        admin_role:role
+
+    }, (err, result) => {
+        if (err) throw err;
+        res.send("Admin Added Successfully!");
+    });
+        
+})
+//DELETE Admin
+app.delete('/api/admin?:adminId', (req,res)=>{
+    pool.query('DELETE FROM admin Where admin_id=?',[req.body.id],
+    function(err,results){
+        if(err) throw err;
+        console.log(`${req.body.id} DELETED`);    
+        return res.status(200).json({message:"Admin Deleted"});
+        });
+});
+
+//GET amenities
+app.get('/api/amenities',(req,res)=>{
+
+    pool.query(`SELECT * FROM amenities` ,(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+            
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'No Data'});
+
+        }
+    })
+
+})
+//POST Amentities
+app.post("/api/addAmenities/",(req,res)=> {
+
+    const aname = req.body.aname;
+    const houseId = req.body.houseId;
+
+    // console.log(location);
+    pool.query('INSERT INTO amenities SET ?',{
+        amenity_name :aname,
+        houses_house_id : houseId,
+
+    }, (err, result) => {
+        if (err) throw err;
+        res.send("Amenity Added Successfully!");
+    });
+        
+})
+//DELETE Amenity by id
+app.delete('/api/amenities?:amenityId', (req,res)=>{
+    pool.query('DELETE FROM amenities Where amenity_id=?',[req.body.id],
+    function(err,results){
+        if(err) throw err;
+        console.log(`${req.body.id} DELETED`);    
+        return res.status(200).json({message:"Amenitiy Deleted"});
+        });
+});
+
+//DELETE Amenity by house id
+app.delete('/api/amenities?:houseId', (req,res)=>{
+    pool.query('DELETE FROM amenities Where house_id=?',[req.body.id],
+    function(err,results){
+        if(err) throw err;
+        console.log(`${req.body.id} DELETED`);    
+        return res.status(200).json({message:"Amenity Mapping to House Deleted"});
+        });
+});
+
+
+//GET rating
+app.get('/api/rating',(req,res)=>{
+
+    pool.query(`SELECT * FROM rating` ,(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+            
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'No Data'});
+
+        }
+    })
+
+})
+
+//DELETE Rating
+app.delete('/api/rating?:userId', (req,res)=>{
+    pool.query('DELETE FROM rating Where user_id=?',[req.body.id],
+    function(err,results){
+        if(err) throw err;
+        console.log(`${req.body.id} DELETED`);    
+        return res.status(200).json({message:"Rating Deleted"});
+        });
+});
+
+//GET reviews
+app.get('/api/reviews',(req,res)=>{
+
+    pool.query(`SELECT * FROM reviews` ,(err,result)=>{
+        if (!err ) 
+        {
+            return res.status(200).json({data:result});
+            
+        }
+        else{
+            console.log(result);
+            return res.status(404).json({message:'No Data'});
+
+        }
+    })
+
+})
+
+//DELETE Reviews
+app.delete('/api/review?:userId', (req,res)=>{
+    pool.query('DELETE FROM reviews Where user_id=?',[req.body.id],
+    function(err,results){
+        if(err) throw err;
+        console.log(`${req.body.id} DELETED`);    
+        return res.status(200).json({message:"Review Deleted"});
+        });
+});
